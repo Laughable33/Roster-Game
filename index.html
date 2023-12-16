@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team Manager</title>
+    <!-- Include Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+    <style>
+        .card {
+            margin: 20px 0;
+            border-radius: 15px;
+        }
+        .card-header, .card-body {
+            text-align: center;
+        }
+        .btn {
+            border-radius: 20px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">Team</div>
+                    <div class="card-body" id="team-section">
+                        <!-- Team details will go here -->
+                        <h3 id="team-name"></h3>
+                        <p id="team-stats"></p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">Team Options</div>
+                    <div class="card-body" id="match-section">
+                        <!-- Current match details will go here -->
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">Roster</div>
+                    <div class="card-body" id="roster-section">
+                        <!-- Player roster will go here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        var team = [];
+        var draft = [];
+        var benched = [];
+        var wins = 0;
+        var losses = 0;
+        var teamMoney = 0;
+        var names = [];
+
+        // Load the names from the JSON file
+        fetch('/names.json')
+            .then(response => response.json())
+            .then(data => names = data.names);
+
+        // Function to get a random name
+        function getRandomName() {
+            var index = Math.floor(Math.random() * names.length);
+            return names[index];
+        }
+
+        // Create a team
+        async function createTeam() {
+            // Load the names from the JSON file
+            await fetch('/names.json')
+                .then(response => response.json())
+                .then(data => names = data.names);
+
+            // Capture team name
+            var teamName = prompt("Please enter your team name:", "My Team");
+            if (teamName != null) {
+                document.getElementById("team-name").innerHTML = teamName;
+            }
+
+            // Display team stats
+            displayTeamStats();
+
+            // Generate 5 players with random accuracy between 1 and 40
+            draft = [];
+            for (var i = 0; i < 5; i++) {
+                var player = {
+                    name: getRandomName(), // Use the getRandomName function
+                    accuracy: Math.floor(Math.random() * 50) + 1 // Random accuracy between 1 and 50
+                };
+                draft.push(player);
+            }
+
+            // Display the players for the draft
+            displayDraft();
+        }
+
+        // Display team stats
+        function displayTeamStats() {
+            var teamStats = document.getElementById("team-stats");
+            teamStats.innerHTML = "Wins: " + wins + " | Losses: " + losses + " | Money: $" + teamMoney;
+        }
+
+        // Display the players for the draft
+        function displayDraft() {
+            var draftSection = document.getElementById("match-section");
+            draftSection.innerHTML = "Draft:<br>";
+            draft.forEach(function(player, index) {
+                draftSection.innerHTML += "<button class='btn btn-primary' onclick='selectPlayer(" + index + ")'>" + player.name + " (Accuracy: " + player.accuracy + "%)</button><br>";
+            });
+        }
+
+        // Select a player from the draft
+        function selectPlayer(index) {
+            // Add the selected player to the team
+            team.push(draft[index]);
+
+            // Remove the selected player from the draft
+            draft.splice(index, 1);
+
+            // Update the draft display
+            displayDraft();
+
+            // Update the roster display
+            displayRoster();
+
+            // If the team has 3 players, navigate to the manager dashboard
+            if (team.length === 3) {
+                var managerDashboard = document.getElementById("match-section");
+                managerDashboard.innerHTML = "<h3>Manager Dashboard</h3>";
+                managerDashboard.innerHTML += "<button class='btn btn-primary' onclick='playMatch()'>Play Match</button><br>";
+                managerDashboard.innerHTML += "<button class='btn btn-primary' onclick='editTeam()'>Edit Team</button><br>";
+                managerDashboard.innerHTML += "<button class='btn btn-primary' onclick='trainTeam()'>Train Team</button><br>";
+            }
+        }
+
+        // Display the player roster
+        function displayRoster() {
+            var rosterSection = document.getElementById("roster-section");
+            rosterSection.innerHTML = "Roster:<br>";
+            team.forEach(function(player) {
+                rosterSection.innerHTML += player.name + " (Accuracy: " + player.accuracy + "%)<br>";
+            });
+
+            // Display benched players if there are any
+            if (benched.length > 0) {
+                rosterSection.innerHTML += "<br>Benched:<br>";
+                benched.forEach(function(player) {
+                    rosterSection.innerHTML += player.name + " (Accuracy: " + player.accuracy + "%)<br>";
+                });
+            }
+        }
+
+        // Start the game
+        function startGame() {
+            // Implement game logic here
+        }
+
+        // Play a match
+        function playMatch() {
+            // Calculate the average accuracy of the active team
+            var totalAccuracy = 0;
+            for (var i = 0; i < team.length; i++) {
+                totalAccuracy += team[i].accuracy;
+            }
+            var averageAccuracy = totalAccuracy / team.length;
+
+            // Generate a random accuracy for the other team
+            var otherTeamAccuracy = Math.floor(Math.random() * 100) + 1; // Random accuracy between 1 and 100
+
+            // Compare the accuracies to determine the winner
+            var result;
+            if (averageAccuracy > otherTeamAccuracy) {
+                result = "Your team won!";
+                wins++;
+                teamMoney += 150;
+            } else if (averageAccuracy < otherTeamAccuracy) {
+                result = "The other team won!";
+                losses++;
+            } else {
+                result = "It's a draw!";
+            }
+
+            // Display the result
+            alert(result);
+
+            // Update team stats
+            displayTeamStats();
+
+            // Check if it's a loss and enough money to train the team
+            if (result === "The other team won!" && teamMoney >= 50 && losses === 1) {
+                var trainButton = document.getElementById("train-button");
+                trainButton.style.display = "block";
+            }
+        }
+
+        // Edit the team
+        function editTeam() {
+            var managerDashboard = document.getElementById("match-section");
+            managerDashboard.innerHTML = "<h3>Edit Team</h3>";
+            managerDashboard.innerHTML += "<button class='btn btn-primary' onclick='goBack()'>Go Back</button><br>";
+
+            // Generate buttons for each player
+            for (var i = 0; i < team.length; i++) {
+                managerDashboard.innerHTML += "<p>" + team[i].name + " (Accuracy: " + team[i].accuracy + "%)</p>";
+                managerDashboard.innerHTML += "<button class='btn btn-primary' onclick='removePlayer(" + i + ")'>Remove Player</button>";
+                managerDashboard.innerHTML += "<button class='btn btn-primary' onclick='benchPlayer(" + i + ")'>Bench Player</button><br>";
+            }
+        }
+
+        // Train the team
+        function trainTeam() {
+            // Check if it's a loss and enough money to train the team
+            if (losses > 0 && teamMoney >= 50 && losses === 1) {
+                // Deduct $50 from team money
+                teamMoney -= 50;
+
+                // Increase each player's accuracy randomly between 1-10%
+                team.forEach(function(player) {
+                    var increase = Math.floor(Math.random() * 10) + 1; // Random increase between 1 and 10
+                    player.accuracy += increase;
+                });
+
+                // Update the roster display
+                displayRoster();
+
+                // Update team stats
+                displayTeamStats();
+            } else if (losses > 1) {
+                alert("You can only train once per loss!");
+            } else if (teamMoney < 50) {
+                alert("Not enough money to train the team!");
+            }
+        }
+
+        // Remove a player from the team
+        function removePlayer(index) {
+            // Remove the player from the team
+            team.splice(index, 1);
+
+            // Update the roster display
+            displayRoster();
+
+            // Return to the edit team menu
+            editTeam();
+        }
+
+        // Bench a player
+        function benchPlayer(index) {
+            // Move the player from the team to the bench
+            benched.push(team[index]);
+            team.splice(index, 1);
+
+            // Update the roster display
+            displayRoster();
+
+            // Return to the edit team menu
+            editTeam();
+        }
+
+        // Go back to the previous screen
+        function goBack() {
+            var managerDashboard = document.getElementById("match-section");
+            managerDashboard.innerHTML = "<h3>Manager Dashboard</h3>";
+            managerDashboard.innerHTML += "<button class='btn btn-primary' onclick='playMatch()'>Play Match</button><br>";
+            managerDashboard.innerHTML += "<button class='btn btn-primary' onclick='editTeam()'>Edit Team</button><br>";
+            managerDashboard.innerHTML += "<button class='btn btn-primary' onclick='trainTeam()'>Train Team</button><br>";
+        }
+
+        // Call createTeam when the page loads
+        window.onload = createTeam;
+    </script>
+</body>
+</html>
