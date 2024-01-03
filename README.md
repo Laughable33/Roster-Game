@@ -1,4 +1,4 @@
-# Roster Game# Roster Game
+# Roster Game
 
 Welcome to Roster Game, an HTML game based on a Java project!
 
